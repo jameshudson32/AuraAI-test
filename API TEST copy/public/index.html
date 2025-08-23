@@ -1133,7 +1133,7 @@
                                     <span>12.5%</span>
                                 </div>
                             </div>
-                            <div class="stat-value">$4,250</div>
+                            <div class="stat-value">$0.00</div>
                             <div class="stat-label">Today's Revenue</div>
                         </div>
                         
@@ -1145,7 +1145,7 @@
                                     <span>8.3%</span>
                                 </div>
                             </div>
-                            <div class="stat-value">1,234</div>
+                            <div class="stat-value">0</div>
                             <div class="stat-label">Active Subscribers</div>
                         </div>
                         
@@ -1157,7 +1157,7 @@
                                     <span>3.2%</span>
                                 </div>
                             </div>
-                            <div class="stat-value">89</div>
+                            <div class="stat-value">0</div>
                             <div class="stat-label">New Messages</div>
                         </div>
                         
@@ -1169,7 +1169,7 @@
                                     <span>24.7%</span>
                                 </div>
                             </div>
-                            <div class="stat-value">456</div>
+                            <div class="stat-value">0</div>
                             <div class="stat-label">Media Files</div>
                         </div>
                     </div>
@@ -1184,29 +1184,8 @@
                         </div>
                         <div class="glass-card">
                             <div class="activity-feed" id="activity-feed">
-                                <div class="activity-item">
-                                    <div class="activity-avatar">💎</div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">New tip received</div>
-                                        <div class="activity-description">$50 from @username</div>
-                                    </div>
-                                    <div class="activity-time">2 min ago</div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-avatar">🔄</div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">Subscription renewed</div>
-                                        <div class="activity-description">@subscriber123 for $19.99/month</div>
-                                    </div>
-                                    <div class="activity-time">15 min ago</div>
-                                </div>
-                                <div class="activity-item">
-                                    <div class="activity-avatar">📸</div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">Media purchased</div>
-                                        <div class="activity-description">Premium photo set for $25</div>
-                                    </div>
-                                    <div class="activity-time">1 hour ago</div>
+                                <div class="empty-state">
+                                    <div class="empty-text">Loading activity...</div>
                                 </div>
                             </div>
                         </div>
@@ -1221,7 +1200,9 @@
                             </div>
                         </div>
                         <div class="media-grid" id="recent-media-grid">
-                            <!-- Media items will be dynamically loaded -->
+                            <div class="empty-state">
+                                <div class="empty-text">Loading media...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1236,7 +1217,9 @@
                         <button class="filter-button">Free</button>
                     </div>
                     <div class="media-grid" id="vault-media-grid">
-                        <!-- Media items will be dynamically loaded -->
+                        <div class="empty-state">
+                            <div class="empty-text">Loading vault...</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1244,7 +1227,9 @@
                 <div class="page" id="messages-page">
                     <div class="messages-container">
                         <div class="conversations-list" id="conversations-list">
-                            <!-- Conversations will be dynamically loaded -->
+                            <div class="empty-state">
+                                <div class="empty-text">Loading conversations...</div>
+                            </div>
                         </div>
                         <div class="chat-window" id="chat-window">
                             <div class="empty-state">
@@ -1342,8 +1327,20 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Initialize Socket.io
-        const socket = io();
+        console.log('Frontend script started');
+        
+        // Initialize Socket.io - make it optional
+        let socket = null;
+        try {
+            if (typeof io !== 'undefined') {
+                socket = io();
+                console.log('Socket.io initialized successfully');
+            } else {
+                console.log('Socket.io not available, continuing without it');
+            }
+        } catch (error) {
+            console.log('Socket.io connection failed:', error);
+        }
         
         // State management
         let currentAccount = null;
@@ -1351,7 +1348,8 @@
         let mediaItems = new Map();
         let conversations = new Map();
         let userPreferences = {};
-        let accountLoadPromise = null; // Track account loading
+        let accountLoadPromise = null;
+        let isInitialized = false;
         
         // Local Storage Manager
         const StorageManager = {
@@ -1405,110 +1403,42 @@
         const pages = document.querySelectorAll('.page');
         const navItems = document.querySelectorAll('.nav-item');
         
-        // UI State Manager
-        const UIState = {
-            save: function() {
-                const state = {
-                    currentPage: currentPage,
-                    currentAccount: currentAccount,
-                    sidebarCollapsed: sidebar.classList.contains('collapsed'),
-                    theme: document.body.dataset.theme || 'dark',
-                    lastUpdated: new Date().toISOString(),
-                    filters: {
-                        vault: this.getVaultFilters(),
-                        messages: this.getMessageFilters()
-                    },
-                    viewModes: {
-                        media: StorageManager.load('mediaViewMode', 'grid')
-                    }
-                };
-                StorageManager.save('uiState', state);
-            },
-            
-            restore: function() {
-                const state = StorageManager.load('uiState');
-                if (state) {
-                    // Restore theme
-                    if (state.theme) {
-                        document.body.dataset.theme = state.theme;
-                    }
-                    
-                    // Restore sidebar state
-                    if (state.sidebarCollapsed) {
-                        sidebar.classList.add('collapsed');
-                    }
-                    
-                    // Restore page (after accounts load)
-                    if (state.currentPage) {
-                        setTimeout(() => {
-                            switchToPage(state.currentPage);
-                        }, 100);
-                    }
-                    
-                    // Restore filters
-                    if (state.filters) {
-                        this.restoreFilters(state.filters);
-                    }
-                }
-            },
-            
-            getVaultFilters: function() {
-                const activeFilter = document.querySelector('.vault-filters .filter-button.active');
-                return activeFilter ? activeFilter.textContent : 'All Media';
-            },
-            
-            getMessageFilters: function() {
-                // Add message filter logic here
-                return {};
-            },
-            
-            restoreFilters: function(filters) {
-                // Restore vault filters
-                if (filters.vault) {
-                    const vaultFilter = document.querySelector(`.vault-filters .filter-button:contains('${filters.vault}')`);
-                    if (vaultFilter) {
-                        document.querySelectorAll('.vault-filters .filter-button').forEach(btn => btn.classList.remove('active'));
-                        vaultFilter.classList.add('active');
-                    }
-                }
-            }
-        };
-        
-        // Save UI state on changes
-        const saveUIStateDebounced = debounce(() => UIState.save(), 500);
-        
         // Initialize app
         async function init() {
-            // Restore UI state first
-            UIState.restore();
+            console.log('Init function called');
+            if (isInitialized) {
+                console.log('Already initialized, skipping');
+                return;
+            }
             
             setupEventListeners();
-            accountLoadPromise = loadAccounts(); // Store the promise
-            await accountLoadPromise; // Wait for accounts to load
+            accountLoadPromise = loadAccounts();
+            await accountLoadPromise;
             setupSocketListeners();
             
-            // Load user preferences from backend
-            await loadUserPreferences();
+            isInitialized = true;
+            console.log('Initialization complete');
         }
         
         // Setup event listeners
         function setupEventListeners() {
-            // Navigation with state saving
+            console.log('Setting up event listeners');
+            
+            // Navigation
             navItems.forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
                     const page = item.dataset.page;
+                    console.log('Nav clicked:', page);
                     switchToPage(page);
-                    saveUIStateDebounced();
                 });
             });
             
             // Account dropdown
             document.getElementById('account-dropdown').addEventListener('click', showAccountSelector);
             
-            // Settings toggles with persistence
+            // Settings toggles
             document.querySelectorAll('.toggle-switch').forEach(toggle => {
-                // Restore saved state
                 const settingName = toggle.closest('.setting-item').querySelector('.setting-name').textContent;
                 const savedState = StorageManager.load(`setting_${settingName}`, toggle.classList.contains('active'));
                 toggle.classList.toggle('active', savedState);
@@ -1517,71 +1447,74 @@
                     this.classList.toggle('active');
                     const settingName = this.closest('.setting-item').querySelector('.setting-name').textContent;
                     StorageManager.save(`setting_${settingName}`, this.classList.contains('active'));
-                    
-                    // Sync to backend
-                    syncPreferences();
                 });
             });
             
-            // Filter buttons with persistence
+            // Filter buttons
             document.querySelectorAll('.filter-button').forEach(button => {
                 button.addEventListener('click', function() {
-                    // Remove active from siblings
                     this.parentElement.querySelectorAll('.filter-button').forEach(btn => {
                         btn.classList.remove('active');
                     });
                     this.classList.add('active');
-                    
-                    // Save filter state
-                    saveUIStateDebounced();
-                    
-                    // Apply filter
                     applyMediaFilter(this.textContent);
                 });
             });
             
-            // Modal close on background click
+            // Modal controls
             document.getElementById('media-modal').addEventListener('click', (e) => {
                 if (e.target.id === 'media-modal') {
                     closeModal();
                 }
             });
             
-            // Escape key to close modal
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     closeModal();
                 }
             });
-            
-            // Save state before page unload
-            window.addEventListener('beforeunload', () => {
-                UIState.save();
-            });
         }
         
-        // Load accounts with saved state - FIXED
+        // Load accounts with better error handling
         async function loadAccounts() {
+            console.log('LoadAccounts called');
             try {
+                console.log('Fetching accounts from /api/accounts...');
                 const response = await fetch('/api/accounts');
-                const accounts = await response.json();
+                console.log('Accounts response status:', response.status);
                 
-                // Check for saved account
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const accounts = await response.json();
+                console.log('Accounts response:', accounts);
+                
+                if (!Array.isArray(accounts)) {
+                    console.error('Expected accounts array, got:', accounts);
+                    throw new Error('Invalid accounts response format');
+                }
+                
                 const savedAccount = StorageManager.load('currentAccount');
                 
                 if (savedAccount && accounts.find(acc => acc.id === savedAccount)) {
                     currentAccount = savedAccount;
                     const account = accounts.find(acc => acc.id === savedAccount);
                     updateAccountDisplay(account);
+                    console.log('Using saved account:', currentAccount);
                     loadDashboard(savedAccount);
                 } else if (accounts.length > 0) {
                     currentAccount = accounts[0].id;
                     updateAccountDisplay(accounts[0]);
+                    console.log('Using first account:', currentAccount);
                     loadDashboard(accounts[0].id);
                     StorageManager.save('currentAccount', currentAccount);
+                } else {
+                    console.warn('No accounts found');
+                    showNotification('No accounts found', 'warning');
                 }
                 
-                // ADDED: Load current page data now that account is set
+                // Load current page data now that account is set
                 if (currentAccount) {
                     console.log('Account loaded:', currentAccount, 'Current page:', currentPage);
                     if (currentPage === 'vault') {
@@ -1593,82 +1526,25 @@
                 
             } catch (error) {
                 console.error('Failed to load accounts:', error);
-                showNotification('Failed to load accounts', 'error');
-            }
-        }
-        
-        // Load user preferences from backend
-        async function loadUserPreferences() {
-            if (!currentAccount) return;
-            
-            try {
-                const response = await fetch(`/api/accounts/${currentAccount}/preferences`);
-                if (response.ok) {
-                    userPreferences = await response.json();
-                    applyUserPreferences(userPreferences);
-                }
-            } catch (error) {
-                console.error('Failed to load user preferences:', error);
-                // Use local preferences as fallback
-                userPreferences = StorageManager.load('userPreferences', {});
-            }
-        }
-        
-        // Apply user preferences
-        function applyUserPreferences(prefs) {
-            if (prefs.theme) {
-                document.body.dataset.theme = prefs.theme;
-            }
-            
-            if (prefs.autoRefresh) {
-                startAutoRefresh();
-            }
-            
-            if (prefs.notificationSound !== undefined) {
-                StorageManager.save('notificationSound', prefs.notificationSound);
-            }
-        }
-        
-        // Sync preferences to backend
-        const syncPreferences = debounce(async () => {
-            if (!currentAccount) return;
-            
-            const preferences = {
-                theme: document.body.dataset.theme || 'dark',
-                currentPage: currentPage,
-                autoRefresh: StorageManager.load('setting_Auto-refresh', false),
-                notificationSound: StorageManager.load('setting_Show Notifications', true),
-                mediaPerPage: 50,
-                lastUpdated: new Date().toISOString()
-            };
-            
-            try {
-                const response = await fetch(`/api/accounts/${currentAccount}/preferences`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(preferences)
-                });
+                showError('Failed to load accounts: ' + error.message);
                 
-                if (!response.ok) {
-                    throw new Error('Failed to save preferences');
-                }
-                
-                // Save locally as backup
-                StorageManager.save('userPreferences', preferences);
-            } catch (error) {
-                console.error('Failed to sync preferences:', error);
-                // Save locally on error
-                StorageManager.save('userPreferences', preferences);
+                // Update UI to show error state
+                document.querySelector('.account-name').textContent = 'Account Error';
+                document.querySelector('.status-dot').style.background = 'var(--danger)';
             }
-        }, 1000);
+        }
         
         // Update account display
         function updateAccountDisplay(account) {
             const avatar = document.querySelector('.account-avatar');
             const name = document.querySelector('.account-name');
             
-            avatar.textContent = (account.username || account.name || 'Account').substring(0, 2).toUpperCase();
-            name.textContent = account.username || account.name || 'Select Account';
+            if (account) {
+                const displayName = account.username || account.name || 'Account';
+                avatar.textContent = displayName.substring(0, 2).toUpperCase();
+                name.textContent = displayName;
+                console.log('Updated account display:', displayName);
+            }
         }
         
         // Show account selector (placeholder)
@@ -1676,8 +1552,10 @@
             showNotification('Account switching coming soon', 'info');
         }
         
-        // Switch pages with state saving - FIXED
+        // Switch pages with better logging
         function switchToPage(pageName) {
+            console.log('Switching to page:', pageName);
+            
             // Update active nav
             navItems.forEach(item => {
                 item.classList.toggle('active', item.dataset.page === pageName);
@@ -1701,13 +1579,11 @@
             pageTitle.textContent = titles[pageName] || 'Dashboard';
             currentPage = pageName;
             
-            // Save state
             StorageManager.save('currentPage', currentPage);
-            saveUIStateDebounced();
             
-            // FIXED: Load page-specific data with account checks
+            // Load page-specific data with account checks
             if (currentAccount) {
-                // Account is already loaded, load page data immediately
+                console.log('Loading page data immediately for:', pageName);
                 switch(pageName) {
                     case 'vault':
                         loadVaultMedia();
@@ -1717,10 +1593,10 @@
                         break;
                 }
             } else if (accountLoadPromise) {
-                // Account is still loading, wait for it
                 console.log('Waiting for account to load before loading page data...');
                 accountLoadPromise.then(() => {
                     if (currentAccount) {
+                        console.log('Account loaded, now loading page data for:', pageName);
                         switch(pageName) {
                             case 'vault':
                                 loadVaultMedia();
@@ -1731,113 +1607,86 @@
                         }
                     }
                 });
+            } else {
+                console.log('No account loading promise, page data will not load');
             }
         }
         
         // Load dashboard data
         async function loadDashboard(accountId) {
-            socket.emit('join-account', accountId);
+            console.log('Loading dashboard for account:', accountId);
             
-            // Load stats
+            if (socket) {
+                socket.emit('join-account', accountId);
+            }
+            
             loadStats(accountId);
-            
-            // Load recent activity
             loadRecentActivity(accountId);
-            
-            // Load recent media
             loadRecentMedia(accountId);
         }
         
         // Load stats
         async function loadStats(accountId) {
+            console.log('Loading stats for account:', accountId);
             try {
                 const response = await fetch(`/api/accounts/${accountId}/stats`);
+                console.log('Stats response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
                 const stats = await response.json();
+                console.log('Stats data:', stats);
                 
                 // Update stat cards
-                document.querySelector('.stat-value').textContent = `$${stats.revenueToday || '0.00'}`;
-                document.querySelectorAll('.stat-value')[1].textContent = stats.subscribers || '0';
+                const statValues = document.querySelectorAll('.stat-value');
+                if (statValues[0]) statValues[0].textContent = `$${stats.revenueToday || '0.00'}`;
+                if (statValues[1]) statValues[1].textContent = stats.subscribers || '0';
+                if (statValues[2]) statValues[2].textContent = stats.unreadMessages || '0';
+                if (statValues[3]) statValues[3].textContent = stats.totalMedia || '0';
                 
                 // Update badges
                 document.getElementById('message-count').textContent = stats.unreadMessages || '0';
                 document.getElementById('vault-count').textContent = stats.totalMedia || '0';
                 
-                // Save stats for offline access
-                StorageManager.save('lastStats', {
-                    ...stats,
-                    timestamp: new Date().toISOString()
-                });
+                StorageManager.save('lastStats', { ...stats, timestamp: new Date().toISOString() });
+                
             } catch (error) {
                 console.error('Failed to load stats:', error);
-                
-                // Try to use cached stats
-                const cachedStats = StorageManager.load('lastStats');
-                if (cachedStats) {
-                    document.querySelector('.stat-value').textContent = `$${cachedStats.revenueToday || '0.00'}`;
-                    document.querySelectorAll('.stat-value')[1].textContent = cachedStats.subscribers || '0';
-                    showNotification('Using cached data', 'info');
-                }
+                showError('Failed to load statistics');
             }
-        }
-        
-        // Auto-refresh functionality
-        let autoRefreshInterval = null;
-        
-        function startAutoRefresh() {
-            if (autoRefreshInterval) return;
-            
-            const refreshRate = StorageManager.load('setting_Auto-refresh', false) ? 30000 : 0;
-            if (refreshRate > 0) {
-                autoRefreshInterval = setInterval(() => {
-                    if (currentAccount) {
-                        loadStats(currentAccount);
-                        if (currentPage === 'dashboard') {
-                            loadRecentActivity(currentAccount);
-                        }
-                    }
-                }, refreshRate);
-            }
-        }
-        
-        function stopAutoRefresh() {
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-            }
-        }
-        
-        // Apply media filter
-        function applyMediaFilter(filterType) {
-            const mediaItems = document.querySelectorAll('.media-item');
-            
-            mediaItems.forEach(item => {
-                const shouldShow = filterType === 'All Media' || 
-                    (filterType === 'Photos' && item.querySelector('.media-type-badge').textContent === 'PHOTO') ||
-                    (filterType === 'Videos' && item.querySelector('.media-type-badge').textContent === 'VIDEO') ||
-                    (filterType === 'Locked' && item.dataset.locked === 'true') ||
-                    (filterType === 'Free' && item.dataset.locked !== 'true');
-                
-                item.style.display = shouldShow ? 'block' : 'none';
-            });
-            
-            // Save filter preference
-            StorageManager.save('vaultFilter', filterType);
         }
         
         // Load recent activity
         async function loadRecentActivity(accountId) {
+            console.log('Loading recent activity for account:', accountId);
             try {
                 const response = await fetch(`/api/accounts/${accountId}/activity`);
+                console.log('Activity response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
                 const activities = await response.json();
+                console.log('Activity data:', activities);
                 
                 const feed = document.getElementById('activity-feed');
                 feed.innerHTML = '';
                 
-                activities.slice(0, 10).forEach(activity => {
-                    feed.appendChild(createActivityItem(activity));
-                });
+                if (activities && activities.length > 0) {
+                    activities.slice(0, 10).forEach(activity => {
+                        feed.appendChild(createActivityItem(activity));
+                    });
+                } else {
+                    feed.innerHTML = '<div class="empty-state"><div class="empty-text">No recent activity</div></div>';
+                }
+                
             } catch (error) {
                 console.error('Failed to load activity:', error);
+                const feed = document.getElementById('activity-feed');
+                feed.innerHTML = '<div class="empty-state"><div class="empty-text">Failed to load activity</div></div>';
             }
         }
         
@@ -1869,9 +1718,17 @@
         
         // Load recent media
         async function loadRecentMedia(accountId) {
+            console.log('Loading recent media for account:', accountId);
             try {
                 const response = await fetch(`/api/accounts/${accountId}/media?limit=8`);
+                console.log('Recent media response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('Recent media data:', data);
                 
                 const grid = document.getElementById('recent-media-grid');
                 grid.innerHTML = '';
@@ -1881,84 +1738,90 @@
                         grid.appendChild(createMediaItem(item));
                     });
                 } else {
-                    grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">📸</div><div class="empty-text">No media yet</div></div>';
+                    grid.innerHTML = '<div class="empty-state"><div class="empty-text">No media found</div></div>';
                 }
+                
             } catch (error) {
                 console.error('Failed to load recent media:', error);
+                const grid = document.getElementById('recent-media-grid');
+                grid.innerHTML = '<div class="empty-state"><div class="empty-text">Failed to load media</div></div>';
             }
         }
         
-        // Load vault media - FIXED
+        // Load vault media with better error handling
         async function loadVaultMedia() {
-            // ADDED: Check if account is loaded
+            console.log('LoadVaultMedia called, currentAccount:', currentAccount);
+            
             if (!currentAccount) {
-                console.log('No account selected, waiting...');
-                // Wait for account to load or show message
+                console.log('No account selected, showing waiting message');
                 const grid = document.getElementById('vault-media-grid');
-                grid.innerHTML = '<div class="vault-loading"><div class="vault-loading-icon"><div class="vault-loading-lock">🔒</div></div><div class="vault-loading-text">Waiting for account...</div><div class="vault-loading-subtext">Please wait while we load your account</div></div>';
+                grid.innerHTML = `
+                    <div class="vault-loading">
+                        <div class="vault-loading-icon">
+                            <div class="vault-loading-lock">🔒</div>
+                        </div>
+                        <div class="vault-loading-text">Waiting for account...</div>
+                        <div class="vault-loading-subtext">Please wait while we load your account</div>
+                    </div>
+                `;
                 
-                // Retry after a delay
                 setTimeout(() => {
                     if (currentAccount) {
                         loadVaultMedia();
                     }
-                }, 1000);
+                }, 2000);
                 return;
             }
             
             const grid = document.getElementById('vault-media-grid');
             
-            // Show custom loading animation
             grid.innerHTML = `
                 <div class="vault-loading">
                     <div class="vault-loading-icon">
                         <div class="vault-loading-lock">🔒</div>
                     </div>
-                    <div class="vault-loading-text">Vault media is loading</div>
+                    <div class="vault-loading-text">Loading vault media...</div>
                     <div class="vault-loading-subtext">Decrypting your content...</div>
                 </div>
             `;
             
             try {
-                console.log('Loading vault media for account:', currentAccount);
+                console.log('Fetching vault media for account:', currentAccount);
                 const response = await fetch(`/api/accounts/${currentAccount}/media?limit=50`);
-                const data = await response.json();
+                console.log('Vault media response status:', response.status);
                 
-                // Simulate minimum loading time for better UX
-                await new Promise(resolve => setTimeout(resolve, 800));
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Vault media data:', data);
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 grid.innerHTML = '';
                 
                 if (data.media && data.media.length > 0) {
-                    // Restore saved filter
-                    const savedFilter = StorageManager.load('vaultFilter', 'All Media');
-                    const filterButton = Array.from(document.querySelectorAll('.vault-filters .filter-button'))
-                        .find(btn => btn.textContent === savedFilter);
-                    if (filterButton && !filterButton.classList.contains('active')) {
-                        document.querySelectorAll('.vault-filters .filter-button').forEach(btn => btn.classList.remove('active'));
-                        filterButton.classList.add('active');
-                    }
-                    
+                    console.log(`Rendering ${data.media.length} media items`);
                     data.media.forEach(item => {
                         mediaItems.set(item.id, item);
                         grid.appendChild(createMediaItem(item));
                     });
-                    
-                    // Apply saved filter
-                    if (savedFilter !== 'All Media') {
-                        applyMediaFilter(savedFilter);
-                    }
                 } else {
+                    console.log('No media found in vault');
                     grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">🔒</div><div class="empty-text">Your vault is empty</div><div class="empty-subtext">Media will appear here as you add content</div></div>';
                 }
+                
             } catch (error) {
                 console.error('Failed to load vault media:', error);
-                grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load media</div></div>';
+                grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load media</div><div class="empty-subtext">' + error.message + '</div></div>';
             }
         }
         
-        // Create media item with persistence data
+        // Create media item
         function createMediaItem(item) {
+            console.log('Creating media item:', item.id, item.type);
+            
             const div = document.createElement('div');
             div.className = 'media-item';
             div.dataset.mediaId = item.id;
@@ -1976,9 +1839,11 @@
                 </div>
             `;
             
-            // Load thumbnail
             if (item.previewUrl || item.thumbnailUrl || item.imageUrl) {
                 loadMediaThumbnail(div, item);
+            } else if (item.previewOnly) {
+                const skeleton = div.querySelector('.skeleton');
+                skeleton.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary);">Preview Only</div>';
             }
             
             return div;
@@ -1992,76 +1857,41 @@
                 let url = item.previewUrl || item.thumbnailUrl || item.imageUrl;
                 
                 if (!url) {
-                    const response = await fetch(`/api/accounts/${currentAccount}/media/scraped-url?id=${item.id}&variant=preview`);
-                    const data = await response.json();
-                    url = data.url;
+                    console.log('No direct URL, fetching scraped URL for item:', item.id);
+                    const response = await fetch(`/api/accounts/${currentAccount}/media/scraped-url?id=${item.id}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        url = data.url;
+                    }
                 }
                 
-                const img = new Image();
-                img.onload = () => {
-                    skeleton.remove();
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    element.insertBefore(img, element.firstChild);
-                };
-                img.onerror = () => {
-                    skeleton.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary);">Preview unavailable</div>';
-                };
-                img.src = url;
+                if (url) {
+                    const img = new Image();
+                    img.onload = () => {
+                        skeleton.remove();
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        element.insertBefore(img, element.firstChild);
+                    };
+                    img.onerror = () => {
+                        skeleton.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary);">Preview unavailable</div>';
+                    };
+                    img.src = url;
+                } else {
+                    skeleton.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary);">No preview</div>';
+                }
+                
             } catch (error) {
+                console.error('Failed to load thumbnail:', error);
                 skeleton.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary);">Failed to load</div>';
             }
         }
         
-        // Open media modal
-        async function openMediaModal(item) {
-            const modal = document.getElementById('media-modal');
-            const content = document.getElementById('modal-content');
-            
-            content.innerHTML = '<div style="color: white; font-size: 1.2rem;">Loading...</div>';
-            modal.classList.add('active');
-            
-            try {
-                let url = item.playbackUrl || item.fullUrl || item.downloadUrl;
-                
-                if (!url) {
-                    const response = await fetch(`/api/accounts/${currentAccount}/media/scraped-url?id=${item.id}&variant=full`);
-                    const data = await response.json();
-                    url = data.url;
-                }
-                
-                if (item.type === 'video') {
-                    content.innerHTML = `<video class="modal-media" controls autoplay><source src="${url}" type="video/mp4"></video>`;
-                } else {
-                    content.innerHTML = `<img class="modal-media" src="${url}" alt="Media">`;
-                }
-            } catch (error) {
-                content.innerHTML = '<div style="color: var(--danger); font-size: 1.2rem;">Failed to load media</div>';
-            }
-        }
-        
-        // Close modal
-        function closeModal() {
-            const modal = document.getElementById('media-modal');
-            const content = document.getElementById('modal-content');
-            
-            modal.classList.remove('active');
-            
-            // Stop video if playing
-            const video = content.querySelector('video');
-            if (video) {
-                video.pause();
-            }
-            
-            setTimeout(() => {
-                content.innerHTML = '';
-            }, 300);
-        }
-        
-        // Load messages - FIXED
+        // Load messages
         async function loadMessages() {
-            // ADDED: Check if account is loaded
+            console.log('LoadMessages called, currentAccount:', currentAccount);
+            
             if (!currentAccount) {
                 console.log('No account selected for messages');
                 const list = document.getElementById('conversations-list');
@@ -2072,20 +1902,23 @@
             try {
                 console.log('Loading messages for account:', currentAccount);
                 const response = await fetch(`/api/accounts/${currentAccount}/messages`);
+                console.log('Messages response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
                 const messages = await response.json();
+                console.log('Messages data:', messages);
                 
                 const list = document.getElementById('conversations-list');
                 list.innerHTML = '';
                 
                 if (messages && messages.length > 0) {
-                    // Group messages by user
                     const grouped = messages.reduce((acc, msg) => {
                         const userId = msg.fromUser?.id || 'unknown';
                         if (!acc[userId]) {
-                            acc[userId] = {
-                                user: msg.fromUser,
-                                messages: []
-                            };
+                            acc[userId] = { user: msg.fromUser, messages: [] };
                         }
                         acc[userId].messages.push(msg);
                         return acc;
@@ -2097,6 +1930,7 @@
                 } else {
                     list.innerHTML = '<div class="empty-state" style="padding: 20px;"><div class="empty-icon">💬</div><div class="empty-text">No messages yet</div></div>';
                 }
+                
             } catch (error) {
                 console.error('Failed to load messages:', error);
                 const list = document.getElementById('conversations-list');
@@ -2122,17 +1956,16 @@
                 </div>
                 <div class="conversation-meta">
                     <div class="conversation-time">${timeAgo}</div>
-                    ${conv.messages.filter(m => !m.read).length > 0 ? '<div class="unread-badge">' + conv.messages.filter(m => !m.read).length + '</div>' : ''}
                 </div>
             `;
             
             item.onclick = () => openConversation(conv);
-            
             return item;
         }
         
         // Open conversation
         function openConversation(conv) {
+            console.log('Opening conversation with:', conv.user?.name);
             const chatWindow = document.getElementById('chat-window');
             
             chatWindow.innerHTML = `
@@ -2151,11 +1984,10 @@
         
         // Create message
         function createMessage(msg) {
-            const isSent = msg.fromUser?.id === currentAccount;
             const timeStr = new Date(msg.createdAt).toLocaleTimeString();
             
             return `
-                <div class="message ${isSent ? 'sent' : ''}">
+                <div class="message">
                     <div class="message-avatar">${msg.fromUser?.name?.substring(0, 2).toUpperCase() || '??'}</div>
                     <div class="message-bubble">
                         <div class="message-text">${msg.text || 'Media message'}</div>
@@ -2165,17 +1997,79 @@
             `;
         }
         
+        // Open media modal
+        async function openMediaModal(item) {
+            console.log('Opening modal for media item:', item.id);
+            const modal = document.getElementById('media-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = '<div style="color: white; font-size: 1.2rem;">Loading...</div>';
+            modal.classList.add('active');
+            
+            try {
+                let url = item.playbackUrl || item.fullUrl || item.downloadUrl || item.imageUrl;
+                
+                if (!url) {
+                    const response = await fetch(`/api/accounts/${currentAccount}/media/scraped-url?id=${item.id}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        url = data.url;
+                    }
+                }
+                
+                if (url) {
+                    if (item.type === 'video') {
+                        content.innerHTML = `<video class="modal-media" controls autoplay><source src="${url}" type="video/mp4"></video>`;
+                    } else {
+                        content.innerHTML = `<img class="modal-media" src="${url}" alt="Media">`;
+                    }
+                } else {
+                    content.innerHTML = '<div style="color: var(--danger); font-size: 1.2rem;">No URL available</div>';
+                }
+            } catch (error) {
+                console.error('Failed to load modal media:', error);
+                content.innerHTML = '<div style="color: var(--danger); font-size: 1.2rem;">Failed to load media</div>';
+            }
+        }
+        
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('media-modal');
+            const content = document.getElementById('modal-content');
+            
+            modal.classList.remove('active');
+            
+            const video = content.querySelector('video');
+            if (video) {
+                video.pause();
+            }
+            
+            setTimeout(() => {
+                content.innerHTML = '';
+            }, 300);
+        }
+        
         // Socket listeners
         function setupSocketListeners() {
+            if (!socket) {
+                console.log('No socket connection, skipping socket listeners');
+                return;
+            }
+            
+            console.log('Setting up socket listeners');
+            
             socket.on('connect', () => {
+                console.log('Socket connected');
                 document.querySelector('.status-dot').style.background = 'var(--success)';
             });
             
             socket.on('disconnect', () => {
+                console.log('Socket disconnected');
                 document.querySelector('.status-dot').style.background = 'var(--danger)';
             });
             
             socket.on('new-message', (data) => {
+                console.log('New message received:', data);
                 if (data.accountId === currentAccount) {
                     showNotification('New message received', 'info');
                     const count = parseInt(document.getElementById('message-count').textContent);
@@ -2184,17 +2078,38 @@
             });
             
             socket.on('new-activity', (data) => {
+                console.log('New activity received:', data);
                 if (data.accountId === currentAccount) {
                     const feed = document.getElementById('activity-feed');
                     const newItem = createActivityItem(data.activity);
                     feed.insertBefore(newItem, feed.firstChild);
                     
-                    // Remove old items if too many
                     while (feed.children.length > 10) {
                         feed.removeChild(feed.lastChild);
                     }
                 }
             });
+        }
+        
+        // Apply media filter
+        function applyMediaFilter(filterType) {
+            console.log('Applying filter:', filterType);
+            const mediaItems = document.querySelectorAll('.media-item');
+            
+            mediaItems.forEach(item => {
+                const badge = item.querySelector('.media-type-badge');
+                if (!badge) return;
+                
+                const shouldShow = filterType === 'All Media' || 
+                    (filterType === 'Photos' && badge.textContent === 'PHOTO') ||
+                    (filterType === 'Videos' && badge.textContent === 'VIDEO') ||
+                    (filterType === 'Locked' && item.dataset.locked === 'true') ||
+                    (filterType === 'Free' && item.dataset.locked !== 'true');
+                
+                item.style.display = shouldShow ? 'block' : 'none';
+            });
+            
+            StorageManager.save('vaultFilter', filterType);
         }
         
         // Utility functions
@@ -2220,7 +2135,8 @@
         }
         
         function showNotification(message, type = 'info') {
-            // Save recent notifications
+            console.log(`[${type}] ${message}`);
+            
             const notifications = StorageManager.load('recentNotifications', []);
             notifications.unshift({
                 message,
@@ -2228,50 +2144,55 @@
                 timestamp: new Date().toISOString()
             });
             
-            // Keep only last 50 notifications
             if (notifications.length > 50) {
                 notifications.length = 50;
             }
             
             StorageManager.save('recentNotifications', notifications);
-            
-            // Show notification (placeholder for now)
-            console.log(`[${type}] ${message}`);
-            
-            // If notifications are enabled, could show desktop notification
-            if (StorageManager.load('setting_Show Notifications', true) && 'Notification' in window) {
-                if (Notification.permission === 'granted') {
-                    new Notification('OnlyFans Dashboard', {
-                        body: message,
-                        icon: '/favicon.ico'
-                    });
-                }
-            }
         }
         
-        // Initialize on load with persistence
+        function showError(message) {
+            console.error('ERROR:', message);
+            showNotification(message, 'error');
+        }
+        
+        // Make functions globally available
+        window.switchToPage = switchToPage;
+        window.closeModal = closeModal;
+        
+        // Initialize on load
         window.addEventListener('load', () => {
+            console.log('Page loaded, initializing...');
+            
             // Request notification permission if needed
             if ('Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission();
             }
             
             // Initialize app
-            init();
+            init().catch(error => {
+                console.error('Initialization failed:', error);
+                showError('Failed to initialize application: ' + error.message);
+            });
             
             // Refresh buttons
             document.querySelectorAll('.header-button').forEach(button => {
-                if (button.textContent.includes('Refresh')) {
+                const buttonText = button.textContent;
+                if (buttonText.includes('Refresh')) {
                     button.addEventListener('click', () => {
+                        console.log('Refresh clicked');
                         if (currentAccount) {
                             loadDashboard(currentAccount);
                             showNotification('Data refreshed', 'success');
+                        } else {
+                            showNotification('No account selected', 'warning');
                         }
                     });
                 }
                 
-                if (button.textContent.includes('Export')) {
+                if (buttonText.includes('Export')) {
                     button.addEventListener('click', () => {
+                        console.log('Export clicked');
                         exportData();
                     });
                 }
@@ -2283,7 +2204,6 @@
             const exportData = {
                 account: currentAccount,
                 preferences: userPreferences,
-                uiState: StorageManager.load('uiState'),
                 stats: StorageManager.load('lastStats'),
                 notifications: StorageManager.load('recentNotifications', []),
                 exportDate: new Date().toISOString()
@@ -2299,14 +2219,6 @@
             
             showNotification('Data exported successfully', 'success');
         }
-        
-        // Make switchToPage globally available
-        window.switchToPage = switchToPage;
-        
-        // Clean up on page unload
-        window.addEventListener('unload', () => {
-            stopAutoRefresh();
-        });
     </script>
 </body>
 </html>
