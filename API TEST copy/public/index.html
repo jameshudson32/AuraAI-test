@@ -1,0 +1,2249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnlyFans Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #141414;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --bg-hover: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1a1;
+            --text-tertiary: #6e6e6e;
+            --accent-primary: #0A84FF;
+            --accent-secondary: #007AFF;
+            --accent-gradient: linear-gradient(135deg, #0A84FF 0%, #007AFF 100%);
+            --success: #32D74B;
+            --warning: #FF9F0A;
+            --danger: #FF453A;
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            --radius: 16px;
+            --radius-sm: 12px;
+            --radius-lg: 24px;
+            --sidebar-width: 280px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: var(--transition);
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-items {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .nav-item.active {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+
+        .nav-item.active::before {
+            opacity: 0.1;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--accent-primary);
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Account Selector */
+        .account-selector {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .account-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .account-dropdown:hover {
+            background: var(--bg-hover);
+        }
+
+        .account-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .account-info {
+            flex: 1;
+        }
+
+        .account-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .account-status {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        /* Header */
+        .header {
+            height: 80px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            flex: 1;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-button {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-button:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent-primary);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+            scroll-behavior: smooth;
+        }
+
+        .content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+            border: 2px solid var(--bg-primary);
+        }
+
+        .content::-webkit-scrollbar-thumb:hover {
+            background: var(--bg-card);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+            border-color: var(--accent-primary);
+        }
+
+        .stat-card:hover::before {
+            opacity: 0.05;
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-hover);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Content Sections */
+        .content-section {
+            margin-bottom: 40px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: var(--transition);
+        }
+
+        /* Activity Feed */
+        .activity-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 12px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .activity-item:hover {
+            background: var(--bg-hover);
+            transform: translateX(4px);
+        }
+
+        .activity-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
+
+        .activity-description {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .activity-time {
+            color: var(--text-tertiary);
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        /* Media Grid */
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .media-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: var(--radius);
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+        }
+
+        .media-item:hover {
+            transform: scale(1.03);
+            box-shadow: var(--shadow);
+            border-color: var(--accent-primary);
+        }
+
+        .media-item img,
+        .media-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .media-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: flex-end;
+            padding: 16px;
+        }
+
+        .media-item:hover .media-overlay {
+            opacity: 1;
+        }
+
+        .media-info {
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .media-type-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Loading States */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-tertiary) 0%, var(--bg-card) 50%, var(--bg-tertiary) 100%);
+            background-size: 200% 100%;
+            animation: skeleton 1.5s ease-in-out infinite;
+            border-radius: var(--radius-sm);
+        }
+
+        @keyframes skeleton {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Vault Loading Animation */
+        .vault-loading {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            gap: 24px;
+        }
+
+        .vault-loading-icon {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+
+        .vault-loading-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid var(--bg-tertiary);
+            border-radius: 50%;
+        }
+
+        .vault-loading-icon::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: vaultSpin 1s linear infinite;
+        }
+
+        .vault-loading-lock {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            animation: vaultPulse 2s ease-in-out infinite;
+        }
+
+        .vault-loading-text {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            animation: vaultFade 1.5s ease-in-out infinite;
+        }
+
+        .vault-loading-subtext {
+            font-size: 0.9rem;
+            color: var(--text-tertiary);
+        }
+
+        @keyframes vaultSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes vaultPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        @keyframes vaultFade {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 40px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: white;
+            font-size: 18px;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .modal-media {
+            max-width: 100%;
+            max-height: 85vh;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .empty-subtext {
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                height: 100vh;
+                box-shadow: var(--shadow);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .content {
+                padding: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 20px;
+            }
+
+            .header-title {
+                font-size: 1.4rem;
+            }
+
+            .stat-value {
+                font-size: 1.8rem;
+            }
+
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 12px;
+            }
+        }
+
+        /* Page Specific Styles */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Messages Page */
+        .messages-container {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 24px;
+            height: calc(100vh - 200px);
+        }
+
+        .conversations-list {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .conversation-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .conversation-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .conversation-item.active {
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .conversation-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .conversation-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .conversation-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .conversation-preview {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conversation-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .conversation-time {
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
+        }
+
+        .unread-badge {
+            background: var(--accent-primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .chat-window {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .message.sent {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-tertiary);
+            position: relative;
+        }
+
+        .message.sent .message-bubble {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .message-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        /* Vault Page */
+        .vault-filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-button {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .filter-button.active {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        /* Settings Page */
+        .settings-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+
+        .settings-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .setting-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .setting-description {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: var(--transition);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">OnlyFans Dashboard</div>
+            
+            <nav class="nav-items">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="vault">
+                    <span class="nav-icon">🔒</span>
+                    <span class="nav-text">Vault</span>
+                    <span class="nav-badge" id="vault-count">0</span>
+                </a>
+                <a href="#" class="nav-item" data-page="messages">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-text">Messages</span>
+                    <span class="nav-badge" id="message-count">0</span>
+                </a>
+                <a href="#" class="nav-item" data-page="analytics">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Analytics</span>
+                </a>
+                <a href="#" class="nav-item" data-page="subscribers">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Subscribers</span>
+                </a>
+                <a href="#" class="nav-item" data-page="earnings">
+                    <span class="nav-icon">💰</span>
+                    <span class="nav-text">Earnings</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Settings</span>
+                </a>
+            </nav>
+
+            <div class="account-selector">
+                <div class="account-dropdown" id="account-dropdown">
+                    <div class="account-avatar">JD</div>
+                    <div class="account-info">
+                        <div class="account-name">Select Account</div>
+                        <div class="account-status">
+                            <span class="status-dot"></span>
+                            <span>Connected</span>
+                        </div>
+                    </div>
+                    <span style="color: var(--text-tertiary);">▼</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="header-title" id="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <button class="header-button">
+                        <span>🔄</span>
+                        <span>Refresh</span>
+                    </button>
+                    <button class="header-button">
+                        <span>📤</span>
+                        <span>Export</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Dashboard Page -->
+                <div class="page active" id="dashboard-page">
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon">💰</div>
+                                <div class="stat-trend trend-up">
+                                    <span>↑</span>
+                                    <span>12.5%</span>
+                                </div>
+                            </div>
+                            <div class="stat-value">$4,250</div>
+                            <div class="stat-label">Today's Revenue</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon">👥</div>
+                                <div class="stat-trend trend-up">
+                                    <span>↑</span>
+                                    <span>8.3%</span>
+                                </div>
+                            </div>
+                            <div class="stat-value">1,234</div>
+                            <div class="stat-label">Active Subscribers</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon">💬</div>
+                                <div class="stat-trend trend-down">
+                                    <span>↓</span>
+                                    <span>3.2%</span>
+                                </div>
+                            </div>
+                            <div class="stat-value">89</div>
+                            <div class="stat-label">New Messages</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div class="stat-icon">📸</div>
+                                <div class="stat-trend trend-up">
+                                    <span>↑</span>
+                                    <span>24.7%</span>
+                                </div>
+                            </div>
+                            <div class="stat-value">456</div>
+                            <div class="stat-label">Media Files</div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Recent Activity</h2>
+                            <div class="section-actions">
+                                <button class="header-button">View All</button>
+                            </div>
+                        </div>
+                        <div class="glass-card">
+                            <div class="activity-feed" id="activity-feed">
+                                <div class="activity-item">
+                                    <div class="activity-avatar">💎</div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">New tip received</div>
+                                        <div class="activity-description">$50 from @username</div>
+                                    </div>
+                                    <div class="activity-time">2 min ago</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-avatar">🔄</div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">Subscription renewed</div>
+                                        <div class="activity-description">@subscriber123 for $19.99/month</div>
+                                    </div>
+                                    <div class="activity-time">15 min ago</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-avatar">📸</div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">Media purchased</div>
+                                        <div class="activity-description">Premium photo set for $25</div>
+                                    </div>
+                                    <div class="activity-time">1 hour ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Media -->
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Recent Media</h2>
+                            <div class="section-actions">
+                                <button class="header-button" onclick="switchToPage('vault')">View Vault</button>
+                            </div>
+                        </div>
+                        <div class="media-grid" id="recent-media-grid">
+                            <!-- Media items will be dynamically loaded -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vault Page -->
+                <div class="page" id="vault-page">
+                    <div class="vault-filters">
+                        <button class="filter-button active">All Media</button>
+                        <button class="filter-button">Photos</button>
+                        <button class="filter-button">Videos</button>
+                        <button class="filter-button">Locked</button>
+                        <button class="filter-button">Free</button>
+                    </div>
+                    <div class="media-grid" id="vault-media-grid">
+                        <!-- Media items will be dynamically loaded -->
+                    </div>
+                </div>
+
+                <!-- Messages Page -->
+                <div class="page" id="messages-page">
+                    <div class="messages-container">
+                        <div class="conversations-list" id="conversations-list">
+                            <!-- Conversations will be dynamically loaded -->
+                        </div>
+                        <div class="chat-window" id="chat-window">
+                            <div class="empty-state">
+                                <div class="empty-icon">💬</div>
+                                <div class="empty-text">Select a conversation</div>
+                                <div class="empty-subtext">Choose a conversation from the list to start messaging</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Page -->
+                <div class="page" id="analytics-page">
+                    <div class="empty-state">
+                        <div class="empty-icon">📈</div>
+                        <div class="empty-text">Analytics Coming Soon</div>
+                        <div class="empty-subtext">Detailed insights and reports will be available here</div>
+                    </div>
+                </div>
+
+                <!-- Subscribers Page -->
+                <div class="page" id="subscribers-page">
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <div class="empty-text">Subscribers Management</div>
+                        <div class="empty-subtext">View and manage your subscriber base</div>
+                    </div>
+                </div>
+
+                <!-- Earnings Page -->
+                <div class="page" id="earnings-page">
+                    <div class="empty-state">
+                        <div class="empty-icon">💰</div>
+                        <div class="empty-text">Earnings Overview</div>
+                        <div class="empty-subtext">Track your income and payment history</div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div class="page" id="settings-page">
+                    <div class="settings-section">
+                        <h3 class="settings-title">General Settings</h3>
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <div class="setting-name">Dark Mode</div>
+                                <div class="setting-description">Use dark theme across the dashboard</div>
+                            </div>
+                            <div class="toggle-switch active"></div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <div class="setting-name">Auto-refresh</div>
+                                <div class="setting-description">Automatically refresh data every 30 seconds</div>
+                            </div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <div class="setting-name">Show Notifications</div>
+                                <div class="setting-description">Display desktop notifications for new activity</div>
+                            </div>
+                            <div class="toggle-switch active"></div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3 class="settings-title">Privacy & Security</h3>
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <div class="setting-name">Two-Factor Authentication</div>
+                                <div class="setting-description">Add an extra layer of security to your account</div>
+                            </div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <div class="setting-name">Hide Sensitive Data</div>
+                                <div class="setting-description">Blur out sensitive information by default</div>
+                            </div>
+                            <div class="toggle-switch"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Media Modal -->
+    <div class="modal" id="media-modal">
+        <span class="modal-close" onclick="closeModal()">×</span>
+        <div class="modal-content" id="modal-content">
+            <!-- Dynamic content -->
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Initialize Socket.io
+        const socket = io();
+        
+        // State management
+        let currentAccount = null;
+        let currentPage = 'dashboard';
+        let mediaItems = new Map();
+        let conversations = new Map();
+        let userPreferences = {};
+        
+        // Local Storage Manager
+        const StorageManager = {
+            prefix: 'of_dashboard_',
+            
+            save: function(key, value) {
+                try {
+                    localStorage.setItem(this.prefix + key, JSON.stringify(value));
+                } catch (e) {
+                    console.error('Failed to save to localStorage:', e);
+                }
+            },
+            
+            load: function(key, defaultValue = null) {
+                try {
+                    const saved = localStorage.getItem(this.prefix + key);
+                    return saved ? JSON.parse(saved) : defaultValue;
+                } catch (e) {
+                    console.error('Failed to load from localStorage:', e);
+                    return defaultValue;
+                }
+            },
+            
+            remove: function(key) {
+                localStorage.removeItem(this.prefix + key);
+            },
+            
+            clear: function() {
+                Object.keys(localStorage)
+                    .filter(key => key.startsWith(this.prefix))
+                    .forEach(key => localStorage.removeItem(key));
+            }
+        };
+        
+        // Debounce utility
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // DOM elements
+        const sidebar = document.getElementById('sidebar');
+        const pageTitle = document.getElementById('page-title');
+        const pages = document.querySelectorAll('.page');
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        // UI State Manager
+        const UIState = {
+            save: function() {
+                const state = {
+                    currentPage: currentPage,
+                    currentAccount: currentAccount,
+                    sidebarCollapsed: sidebar.classList.contains('collapsed'),
+                    theme: document.body.dataset.theme || 'dark',
+                    lastUpdated: new Date().toISOString(),
+                    filters: {
+                        vault: this.getVaultFilters(),
+                        messages: this.getMessageFilters()
+                    },
+                    viewModes: {
+                        media: StorageManager.load('mediaViewMode', 'grid')
+                    }
+                };
+                StorageManager.save('uiState', state);
+            },
+            
+            restore: function() {
+                const state = StorageManager.load('uiState');
+                if (state) {
+                    // Restore theme
+                    if (state.theme) {
+                        document.body.dataset.theme = state.theme;
+                    }
+                    
+                    // Restore sidebar state
+                    if (state.sidebarCollapsed) {
+                        sidebar.classList.add('collapsed');
+                    }
+                    
+                    // Restore page (after accounts load)
+                    if (state.currentPage) {
+                        setTimeout(() => {
+                            switchToPage(state.currentPage);
+                        }, 100);
+                    }
+                    
+                    // Restore filters
+                    if (state.filters) {
+                        this.restoreFilters(state.filters);
+                    }
+                }
+            },
+            
+            getVaultFilters: function() {
+                const activeFilter = document.querySelector('.vault-filters .filter-button.active');
+                return activeFilter ? activeFilter.textContent : 'All Media';
+            },
+            
+            getMessageFilters: function() {
+                // Add message filter logic here
+                return {};
+            },
+            
+            restoreFilters: function(filters) {
+                // Restore vault filters
+                if (filters.vault) {
+                    const vaultFilter = document.querySelector(`.vault-filters .filter-button:contains('${filters.vault}')`);
+                    if (vaultFilter) {
+                        document.querySelectorAll('.vault-filters .filter-button').forEach(btn => btn.classList.remove('active'));
+                        vaultFilter.classList.add('active');
+                    }
+                }
+            }
+        };
+        
+        // Save UI state on changes
+        const saveUIStateDebounced = debounce(() => UIState.save(), 500);
+        
+        // Initialize app
+        async function init() {
+            // Restore UI state first
+            UIState.restore();
+            
+            setupEventListeners();
+            await loadAccounts();
+            setupSocketListeners();
+            
+            // Load user preferences from backend
+            await loadUserPreferences();
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Navigation with state saving
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = item.dataset.page;
+                    switchToPage(page);
+                    saveUIStateDebounced();
+                });
+            });
+            
+            // Account dropdown
+            document.getElementById('account-dropdown').addEventListener('click', showAccountSelector);
+            
+            // Settings toggles with persistence
+            document.querySelectorAll('.toggle-switch').forEach(toggle => {
+                // Restore saved state
+                const settingName = toggle.closest('.setting-item').querySelector('.setting-name').textContent;
+                const savedState = StorageManager.load(`setting_${settingName}`, toggle.classList.contains('active'));
+                toggle.classList.toggle('active', savedState);
+                
+                toggle.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    const settingName = this.closest('.setting-item').querySelector('.setting-name').textContent;
+                    StorageManager.save(`setting_${settingName}`, this.classList.contains('active'));
+                    
+                    // Sync to backend
+                    syncPreferences();
+                });
+            });
+            
+            // Filter buttons with persistence
+            document.querySelectorAll('.filter-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active from siblings
+                    this.parentElement.querySelectorAll('.filter-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Save filter state
+                    saveUIStateDebounced();
+                    
+                    // Apply filter
+                    applyMediaFilter(this.textContent);
+                });
+            });
+            
+            // Modal close on background click
+            document.getElementById('media-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'media-modal') {
+                    closeModal();
+                }
+            });
+            
+            // Escape key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+            
+            // Save state before page unload
+            window.addEventListener('beforeunload', () => {
+                UIState.save();
+            });
+        }
+        
+        // Load accounts with saved state
+        async function loadAccounts() {
+            try {
+                const response = await fetch('/api/accounts');
+                const accounts = await response.json();
+                
+                // Check for saved account
+                const savedAccount = StorageManager.load('currentAccount');
+                
+                if (savedAccount && accounts.find(acc => acc.id === savedAccount)) {
+                    currentAccount = savedAccount;
+                    const account = accounts.find(acc => acc.id === savedAccount);
+                    updateAccountDisplay(account);
+                    loadDashboard(savedAccount);
+                } else if (accounts.length > 0) {
+                    currentAccount = accounts[0].id;
+                    updateAccountDisplay(accounts[0]);
+                    loadDashboard(accounts[0].id);
+                    StorageManager.save('currentAccount', currentAccount);
+                }
+            } catch (error) {
+                console.error('Failed to load accounts:', error);
+                showNotification('Failed to load accounts', 'error');
+            }
+        }
+        
+        // Load user preferences from backend
+        async function loadUserPreferences() {
+            if (!currentAccount) return;
+            
+            try {
+                const response = await fetch(`/api/accounts/${currentAccount}/preferences`);
+                if (response.ok) {
+                    userPreferences = await response.json();
+                    applyUserPreferences(userPreferences);
+                }
+            } catch (error) {
+                console.error('Failed to load user preferences:', error);
+                // Use local preferences as fallback
+                userPreferences = StorageManager.load('userPreferences', {});
+            }
+        }
+        
+        // Apply user preferences
+        function applyUserPreferences(prefs) {
+            if (prefs.theme) {
+                document.body.dataset.theme = prefs.theme;
+            }
+            
+            if (prefs.autoRefresh) {
+                startAutoRefresh();
+            }
+            
+            if (prefs.notificationSound !== undefined) {
+                StorageManager.save('notificationSound', prefs.notificationSound);
+            }
+        }
+        
+        // Sync preferences to backend
+        const syncPreferences = debounce(async () => {
+            if (!currentAccount) return;
+            
+            const preferences = {
+                theme: document.body.dataset.theme || 'dark',
+                currentPage: currentPage,
+                autoRefresh: StorageManager.load('setting_Auto-refresh', false),
+                notificationSound: StorageManager.load('setting_Show Notifications', true),
+                mediaPerPage: 50,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch(`/api/accounts/${currentAccount}/preferences`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(preferences)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save preferences');
+                }
+                
+                // Save locally as backup
+                StorageManager.save('userPreferences', preferences);
+            } catch (error) {
+                console.error('Failed to sync preferences:', error);
+                // Save locally on error
+                StorageManager.save('userPreferences', preferences);
+            }
+        }, 1000);
+        
+        // Update account display
+        function updateAccountDisplay(account) {
+            const avatar = document.querySelector('.account-avatar');
+            const name = document.querySelector('.account-name');
+            
+            avatar.textContent = (account.username || account.name || 'Account').substring(0, 2).toUpperCase();
+            name.textContent = account.username || account.name || 'Select Account';
+        }
+        
+        // Show account selector (placeholder)
+        function showAccountSelector() {
+            showNotification('Account switching coming soon', 'info');
+        }
+        
+        // Switch pages with state saving
+        function switchToPage(pageName) {
+            // Update active nav
+            navItems.forEach(item => {
+                item.classList.toggle('active', item.dataset.page === pageName);
+            });
+            
+            // Update page visibility
+            pages.forEach(page => {
+                page.classList.toggle('active', page.id === `${pageName}-page`);
+            });
+            
+            // Update page title
+            const titles = {
+                dashboard: 'Dashboard',
+                vault: 'Media Vault',
+                messages: 'Messages',
+                analytics: 'Analytics',
+                subscribers: 'Subscribers',
+                earnings: 'Earnings',
+                settings: 'Settings'
+            };
+            pageTitle.textContent = titles[pageName] || 'Dashboard';
+            currentPage = pageName;
+            
+            // Save state
+            StorageManager.save('currentPage', currentPage);
+            saveUIStateDebounced();
+            
+            // Load page-specific data
+            switch(pageName) {
+                case 'vault':
+                    loadVaultMedia();
+                    break;
+                case 'messages':
+                    loadMessages();
+                    break;
+            }
+        }
+        
+        // Load dashboard data
+        async function loadDashboard(accountId) {
+            socket.emit('join-account', accountId);
+            
+            // Load stats
+            loadStats(accountId);
+            
+            // Load recent activity
+            loadRecentActivity(accountId);
+            
+            // Load recent media
+            loadRecentMedia(accountId);
+        }
+        
+        // Load stats
+        async function loadStats(accountId) {
+            try {
+                const response = await fetch(`/api/accounts/${accountId}/stats`);
+                const stats = await response.json();
+                
+                // Update stat cards
+                document.querySelector('.stat-value').textContent = `$${stats.revenueToday || '0.00'}`;
+                document.querySelectorAll('.stat-value')[1].textContent = stats.subscribers || '0';
+                
+                // Update badges
+                document.getElementById('message-count').textContent = stats.unreadMessages || '0';
+                document.getElementById('vault-count').textContent = stats.totalMedia || '0';
+                
+                // Save stats for offline access
+                StorageManager.save('lastStats', {
+                    ...stats,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+                
+                // Try to use cached stats
+                const cachedStats = StorageManager.load('lastStats');
+                if (cachedStats) {
+                    document.querySelector('.stat-value').textContent = `$${cachedStats.revenueToday || '0.00'}`;
+                    document.querySelectorAll('.stat-value')[1].textContent = cachedStats.subscribers || '0';
+                    showNotification('Using cached data', 'info');
+                }
+            }
+        }
+        
+        // Auto-refresh functionality
+        let autoRefreshInterval = null;
+        
+        function startAutoRefresh() {
+            if (autoRefreshInterval) return;
+            
+            const refreshRate = StorageManager.load('setting_Auto-refresh', false) ? 30000 : 0;
+            if (refreshRate > 0) {
+                autoRefreshInterval = setInterval(() => {
+                    if (currentAccount) {
+                        loadStats(currentAccount);
+                        if (currentPage === 'dashboard') {
+                            loadRecentActivity(currentAccount);
+                        }
+                    }
+                }, refreshRate);
+            }
+        }
+        
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+        
+        // Apply media filter
+        function applyMediaFilter(filterType) {
+            const mediaItems = document.querySelectorAll('.media-item');
+            
+            mediaItems.forEach(item => {
+                const shouldShow = filterType === 'All Media' || 
+                    (filterType === 'Photos' && item.querySelector('.media-type-badge').textContent === 'PHOTO') ||
+                    (filterType === 'Videos' && item.querySelector('.media-type-badge').textContent === 'VIDEO') ||
+                    (filterType === 'Locked' && item.dataset.locked === 'true') ||
+                    (filterType === 'Free' && item.dataset.locked !== 'true');
+                
+                item.style.display = shouldShow ? 'block' : 'none';
+            });
+            
+            // Save filter preference
+            StorageManager.save('vaultFilter', filterType);
+        }
+        
+        // Load recent activity
+        async function loadRecentActivity(accountId) {
+            try {
+                const response = await fetch(`/api/accounts/${accountId}/activity`);
+                const activities = await response.json();
+                
+                const feed = document.getElementById('activity-feed');
+                feed.innerHTML = '';
+                
+                activities.slice(0, 10).forEach(activity => {
+                    feed.appendChild(createActivityItem(activity));
+                });
+            } catch (error) {
+                console.error('Failed to load activity:', error);
+            }
+        }
+        
+        // Create activity item
+        function createActivityItem(activity) {
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            
+            const icons = {
+                subscription: '🔄',
+                tip: '💎',
+                purchase: '📸',
+                message: '💬'
+            };
+            
+            const timeAgo = getTimeAgo(activity.createdAt);
+            
+            item.innerHTML = `
+                <div class="activity-avatar">${icons[activity.type] || '🔔'}</div>
+                <div class="activity-content">
+                    <div class="activity-title">${activity.title || activity.type}</div>
+                    <div class="activity-description">${activity.description}</div>
+                </div>
+                <div class="activity-time">${timeAgo}</div>
+            `;
+            
+            return item;
+        }
+        
+        // Load recent media
+        async function loadRecentMedia(accountId) {
+            try {
+                const response = await fetch(`/api/accounts/${accountId}/media?limit=8`);
+                const data = await response.json();
+                
+                const grid = document.getElementById('recent-media-grid');
+                grid.innerHTML = '';
+                
+                if (data.media && data.media.length > 0) {
+                    data.media.forEach(item => {
+                        grid.appendChild(createMediaItem(item));
+                    });
+                } else {
+                    grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">📸</div><div class="empty-text">No media yet</div></div>';
+                }
+            } catch (error) {
+                console.error('Failed to load recent media:', error);
+            }
+        }
+        
+        // Load vault media
+        async function loadVaultMedia() {
+            const grid = document.getElementById('vault-media-grid');
+            
+            // Show custom loading animation
+            grid.innerHTML = `
+                <div class="vault-loading">
+                    <div class="vault-loading-icon">
+                        <div class="vault-loading-lock">🔒</div>
+                    </div>
+                    <div class="vault-loading-text">Vault media is loading</div>
+                    <div class="vault-loading-subtext">Decrypting your content...</div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`/api/accounts/${currentAccount}/media?limit=50`);
+                const data = await response.json();
+                
+                // Simulate minimum loading time for better UX
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                grid.innerHTML = '';
+                
+                if (data.media && data.media.length > 0) {
+                    // Restore saved filter
+                    const savedFilter = StorageManager.load('vaultFilter', 'All Media');
+                    const filterButton = Array.from(document.querySelectorAll('.vault-filters .filter-button'))
+                        .find(btn => btn.textContent === savedFilter);
+                    if (filterButton && !filterButton.classList.contains('active')) {
+                        document.querySelectorAll('.vault-filters .filter-button').forEach(btn => btn.classList.remove('active'));
+                        filterButton.classList.add('active');
+                    }
+                    
+                    data.media.forEach(item => {
+                        mediaItems.set(item.id, item);
+                        grid.appendChild(createMediaItem(item));
+                    });
+                    
+                    // Apply saved filter
+                    if (savedFilter !== 'All Media') {
+                        applyMediaFilter(savedFilter);
+                    }
+                } else {
+                    grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">🔒</div><div class="empty-text">Your vault is empty</div><div class="empty-subtext">Media will appear here as you add content</div></div>';
+                }
+            } catch (error) {
+                console.error('Failed to load vault media:', error);
+                grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load media</div></div>';
+            }
+        }
+        
+        // Create media item with persistence data
+        function createMediaItem(item) {
+            const div = document.createElement('div');
+            div.className = 'media-item';
+            div.dataset.mediaId = item.id;
+            div.dataset.mediaType = item.type;
+            div.dataset.locked = item.locked || false;
+            div.onclick = () => openMediaModal(item);
+            
+            const typeLabel = item.type === 'video' ? 'VIDEO' : 'PHOTO';
+            
+            div.innerHTML = `
+                <div class="skeleton" style="width: 100%; height: 100%;"></div>
+                <div class="media-type-badge">${typeLabel}</div>
+                <div class="media-overlay">
+                    <div class="media-info">${new Date(item.createdAt).toLocaleDateString()}</div>
+                </div>
+            `;
+            
+            // Load thumbnail
+            if (item.previewUrl || item.thumbnailUrl) {
+                loadMediaThumbnail(div, item);
+            }
+            
+            return div;
+        }
+        
+        // Load media thumbnail
+        async function loadMediaThumbnail(element, item) {
+            const skeleton = element.querySelector('.skeleton');
+            
+            try {
+                let url = item.previewUrl || item.thumbnailUrl;
+                
+                if (!url) {
+                    const response = await fetch(`/api/accounts/${currentAccount}/media/scraped-url?id=${item.id}&variant=preview`);
+                    const data = await response.json();
+                    url = data.url;
+                }
+                
+                const img = new Image();
+                img.onload = () => {
+                    skeleton.remove();
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    element.insertBefore(img, element.firstChild);
+                };
+                img.onerror = () => {
+                    skeleton.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary);">Preview unavailable</div>';
+                };
+                img.src = url;
+            } catch (error) {
+                skeleton.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary);">Failed to load</div>';
+            }
+        }
+        
+        // Open media modal
+        async function openMediaModal(item) {
+            const modal = document.getElementById('media-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = '<div style="color: white; font-size: 1.2rem;">Loading...</div>';
+            modal.classList.add('active');
+            
+            try {
+                let url = item.playbackUrl || item.fullUrl;
+                
+                if (!url) {
+                    const response = await fetch(`/api/accounts/${currentAccount}/media/scraped-url?id=${item.id}&variant=full`);
+                    const data = await response.json();
+                    url = data.url;
+                }
+                
+                if (item.type === 'video') {
+                    content.innerHTML = `<video class="modal-media" controls autoplay><source src="${url}" type="video/mp4"></video>`;
+                } else {
+                    content.innerHTML = `<img class="modal-media" src="${url}" alt="Media">`;
+                }
+            } catch (error) {
+                content.innerHTML = '<div style="color: var(--danger); font-size: 1.2rem;">Failed to load media</div>';
+            }
+        }
+        
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('media-modal');
+            const content = document.getElementById('modal-content');
+            
+            modal.classList.remove('active');
+            
+            // Stop video if playing
+            const video = content.querySelector('video');
+            if (video) {
+                video.pause();
+            }
+            
+            setTimeout(() => {
+                content.innerHTML = '';
+            }, 300);
+        }
+        
+        // Load messages
+        async function loadMessages() {
+            try {
+                const response = await fetch(`/api/accounts/${currentAccount}/messages`);
+                const messages = await response.json();
+                
+                const list = document.getElementById('conversations-list');
+                list.innerHTML = '';
+                
+                // Group messages by user
+                const grouped = messages.reduce((acc, msg) => {
+                    const userId = msg.fromUser?.id || 'unknown';
+                    if (!acc[userId]) {
+                        acc[userId] = {
+                            user: msg.fromUser,
+                            messages: []
+                        };
+                    }
+                    acc[userId].messages.push(msg);
+                    return acc;
+                }, {});
+                
+                Object.values(grouped).forEach(conv => {
+                    list.appendChild(createConversationItem(conv));
+                });
+            } catch (error) {
+                console.error('Failed to load messages:', error);
+            }
+        }
+        
+        // Create conversation item
+        function createConversationItem(conv) {
+            const item = document.createElement('div');
+            item.className = 'conversation-item';
+            
+            const lastMessage = conv.messages[0];
+            const userName = conv.user?.name || conv.user?.username || 'Unknown';
+            const initials = userName.substring(0, 2).toUpperCase();
+            const timeAgo = getTimeAgo(lastMessage.createdAt);
+            
+            item.innerHTML = `
+                <div class="conversation-avatar">${initials}</div>
+                <div class="conversation-content">
+                    <div class="conversation-name">${userName}</div>
+                    <div class="conversation-preview">${lastMessage.text || 'Media message'}</div>
+                </div>
+                <div class="conversation-meta">
+                    <div class="conversation-time">${timeAgo}</div>
+                    ${conv.messages.filter(m => !m.read).length > 0 ? '<div class="unread-badge">' + conv.messages.filter(m => !m.read).length + '</div>' : ''}
+                </div>
+            `;
+            
+            item.onclick = () => openConversation(conv);
+            
+            return item;
+        }
+        
+        // Open conversation
+        function openConversation(conv) {
+            const chatWindow = document.getElementById('chat-window');
+            
+            chatWindow.innerHTML = `
+                <div class="chat-header">
+                    <div class="conversation-avatar">${conv.user?.name?.substring(0, 2).toUpperCase() || 'UN'}</div>
+                    <div>
+                        <div class="conversation-name">${conv.user?.name || 'Unknown'}</div>
+                        <div class="conversation-preview">@${conv.user?.username || 'unknown'}</div>
+                    </div>
+                </div>
+                <div class="chat-messages">
+                    ${conv.messages.map(msg => createMessage(msg)).join('')}
+                </div>
+            `;
+        }
+        
+        // Create message
+        function createMessage(msg) {
+            const isSent = msg.fromUser?.id === currentAccount;
+            const timeStr = new Date(msg.createdAt).toLocaleTimeString();
+            
+            return `
+                <div class="message ${isSent ? 'sent' : ''}">
+                    <div class="message-avatar">${msg.fromUser?.name?.substring(0, 2).toUpperCase() || '??'}</div>
+                    <div class="message-bubble">
+                        <div class="message-text">${msg.text || 'Media message'}</div>
+                        <div class="message-time">${timeStr}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Socket listeners
+        function setupSocketListeners() {
+            socket.on('connect', () => {
+                document.querySelector('.status-dot').style.background = 'var(--success)';
+            });
+            
+            socket.on('disconnect', () => {
+                document.querySelector('.status-dot').style.background = 'var(--danger)';
+            });
+            
+            socket.on('new-message', (data) => {
+                if (data.accountId === currentAccount) {
+                    showNotification('New message received', 'info');
+                    const count = parseInt(document.getElementById('message-count').textContent);
+                    document.getElementById('message-count').textContent = count + 1;
+                }
+            });
+            
+            socket.on('new-activity', (data) => {
+                if (data.accountId === currentAccount) {
+                    const feed = document.getElementById('activity-feed');
+                    const newItem = createActivityItem(data.activity);
+                    feed.insertBefore(newItem, feed.firstChild);
+                    
+                    // Remove old items if too many
+                    while (feed.children.length > 10) {
+                        feed.removeChild(feed.lastChild);
+                    }
+                }
+            });
+        }
+        
+        // Utility functions
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+            
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + ' years ago';
+            
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + ' months ago';
+            
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + ' days ago';
+            
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + ' hours ago';
+            
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + ' min ago';
+            
+            return 'Just now';
+        }
+        
+        function showNotification(message, type = 'info') {
+            // Save recent notifications
+            const notifications = StorageManager.load('recentNotifications', []);
+            notifications.unshift({
+                message,
+                type,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Keep only last 50 notifications
+            if (notifications.length > 50) {
+                notifications.length = 50;
+            }
+            
+            StorageManager.save('recentNotifications', notifications);
+            
+            // Show notification (placeholder for now)
+            console.log(`[${type}] ${message}`);
+            
+            // If notifications are enabled, could show desktop notification
+            if (StorageManager.load('setting_Show Notifications', true) && 'Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    new Notification('OnlyFans Dashboard', {
+                        body: message,
+                        icon: '/favicon.ico'
+                    });
+                }
+            }
+        }
+        
+        // Initialize on load with persistence
+        window.addEventListener('load', () => {
+            // Request notification permission if needed
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+            
+            // Initialize app
+            init();
+            
+            // Refresh buttons
+            document.querySelectorAll('.header-button').forEach(button => {
+                if (button.textContent.includes('Refresh')) {
+                    button.addEventListener('click', () => {
+                        if (currentAccount) {
+                            loadDashboard(currentAccount);
+                            showNotification('Data refreshed', 'success');
+                        }
+                    });
+                }
+                
+                if (button.textContent.includes('Export')) {
+                    button.addEventListener('click', () => {
+                        exportData();
+                    });
+                }
+            });
+        });
+        
+        // Export data functionality
+        function exportData() {
+            const exportData = {
+                account: currentAccount,
+                preferences: userPreferences,
+                uiState: StorageManager.load('uiState'),
+                stats: StorageManager.load('lastStats'),
+                notifications: StorageManager.load('recentNotifications', []),
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `onlyfans-dashboard-export-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Data exported successfully', 'success');
+        }
+        
+        // Make switchToPage globally available
+        window.switchToPage = switchToPage;
+        
+        // Clean up on page unload
+        window.addEventListener('unload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>
