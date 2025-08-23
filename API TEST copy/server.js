@@ -702,7 +702,7 @@ io.on('connection', (socket) => {
 // Start server
 // =========================
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`[SERVER] Started on port ${PORT}`);
   console.log(`[CONFIG] API Base: ${OF_API_BASE}`);
   console.log(`[CONFIG] Account ID: ${OF_ACCOUNT_ID}`);
