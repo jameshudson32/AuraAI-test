@@ -17,8 +17,9 @@ const io = socketIo(server, {
 });
 
 // =========================
-// Configuration
-// =========================
+/**
+ * Configuration
+ */
 const OF_API_BASE = process.env.OF_API_BASE || 'https://app.onlyfansapi.com';
 const OF_API_KEY = process.env.OF_API_KEY;
 const OF_ACCOUNT_ID = process.env.OF_ACCOUNT_ID;
@@ -236,6 +237,7 @@ async function scrapeUrl(cdnUrl, accountId) {
 
 /**
  * Normalize a media item for the frontend.
+ * (CHANGED: allow previews/resizes as fallback when no original is available)
  */
 async function normalizeMediaItem(item, scrapeEnabled = true, accountId) {
   const normalized = {
@@ -250,12 +252,44 @@ async function normalizeMediaItem(item, scrapeEnabled = true, accountId) {
 
   // Get original URL only (skip previews/thumbs)
   const originalUrl = extractOriginalUrl(item);
+
+  // --- NEW: if no original, fall back to any preview/resize for thumbnails/posters ---
   if (!originalUrl) {
+    const previewCandidates = [
+      item.files?.preview?.url,
+      item.files?.thumb?.url,
+      item.preview?.url,
+      item.thumb?.url,
+      item.preview,
+      item.thumb,
+      // sometimes preview/resize lives directly under files.source for photos
+      item.files?.source?.url, // allow even if transformed; we're using it only as a preview
+    ].filter(Boolean);
+
+    if (previewCandidates.length) {
+      const preview = previewCandidates[0];
+
+      if (normalized.type === 'video') {
+        // Poster only; no playback/download without a scraped original
+        normalized.previewUrl = preview;
+        normalized.previewOnly = true;
+        return normalized;
+      } else {
+        // Photo thumbnail fallback
+        normalized.previewUrl = preview;
+        normalized.imageUrl = preview;
+        normalized.previewOnly = true;
+        return normalized;
+      }
+    }
+
+    // If absolutely nothing exists, keep prior error behavior
     normalized.error = true;
     normalized.errorCode = 'no_source_url';
     normalized.errorMessage = 'No original URL available';
     return normalized;
   }
+  // --- END NEW ---
 
   // Scrape
   if (!scrapeEnabled) {
