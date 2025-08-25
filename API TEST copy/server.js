@@ -461,20 +461,38 @@ async function preloadVaultMedia(accountId) {
   io.emit('vault-loading-start', vaultLoadingStatus);
 
   try {
-    // Fetch all vault media
-    console.log(`[PRELOAD] Fetching vault media list...`);
-    const vaultResponse = await apiClient.get(`/api/${accountId}/media/vault`, {
-      params: { limit: 1000, order: 'publish_date_desc' },
-    });
-
+    // Fetch all vault media with pagination (API limit is 100)
+    console.log(`[PRELOAD] Fetching vault media list with pagination...`);
     let items = [];
-    if (vaultResponse.data?.data?.list) items = vaultResponse.data.data.list;
-    else if (Array.isArray(vaultResponse.data?.data)) items = vaultResponse.data.data;
-    else if (Array.isArray(vaultResponse.data)) items = vaultResponse.data;
-    else if (vaultResponse.data?.list) items = vaultResponse.data.list;
+    let offset = 0;
+    const limit = 100; // API maximum
+    let hasMore = true;
 
-    if (!Array.isArray(items)) {
-      throw new Error('Invalid vault response structure');
+    while (hasMore) {
+      const vaultResponse = await apiClient.get(`/api/${accountId}/media/vault`, {
+        params: { limit, offset, order: 'publish_date_desc' },
+      });
+
+      let pageItems = [];
+      if (vaultResponse.data?.data?.list) pageItems = vaultResponse.data.data.list;
+      else if (Array.isArray(vaultResponse.data?.data)) pageItems = vaultResponse.data.data;
+      else if (Array.isArray(vaultResponse.data)) pageItems = vaultResponse.data;
+      else if (vaultResponse.data?.list) pageItems = vaultResponse.data.list;
+
+      if (!Array.isArray(pageItems)) {
+        throw new Error('Invalid vault response structure');
+      }
+
+      items = items.concat(pageItems);
+      hasMore = pageItems.length === limit; // Continue if we got a full page
+      offset += limit;
+
+      console.log(`[PRELOAD] Fetched ${pageItems.length} items (total: ${items.length})`);
+      
+      // Small delay between requests to avoid overwhelming the API
+      if (hasMore) {
+        await sleep(200);
+      }
     }
 
     vaultLoadingStatus.total = items.length;
